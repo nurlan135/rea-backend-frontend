@@ -1,18 +1,47 @@
 'use client';
 
 import { ReactNode, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { 
+  Bell,
+  ChevronDown,
+  Home,
+  Building,
+  Calendar,
+  DollarSign,
+  Receipt,
+  MessageSquare,
+  FileText,
+  Users,
+  Shield,
+  Settings,
+  Search,
+  Menu,
+  X
+} from 'lucide-react';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 
 interface NavigationItem {
   name: string;
   href: string;
-  icon: string;
+  icon: React.ComponentType<{ className?: string }>;
   requiredRoles?: string[];
   requiredPermissions?: string[];
+  badge?: string;
+  children?: NavigationItem[];
 }
 
 interface DashboardLayoutProps {
@@ -23,55 +52,59 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, logout } = useAuth();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [notificationCount] = useState(3); // Mock notification count
 
   const navigation: NavigationItem[] = [
     {
       name: 'Əsas Səhifə',
       href: '/dashboard',
-      icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z',
+      icon: Home,
     },
     {
       name: 'Əmlak',
       href: '/dashboard/properties',
-      icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
+      icon: Building,
+      badge: '24', // Could be dynamic count
     },
     {
       name: 'Rezervasiyalar',
       href: '/dashboard/bookings',
-      icon: 'M8 7V3a4 4 0 118 0v4m-8 0h8m-8 0H6a2 2 0 00-2 2v6a2 2 0 002 2h8a2 2 0 002-2V9a2 2 0 00-2-2h-2',
+      icon: Calendar,
+      badge: '5',
     },
     {
       name: 'Satışlar',
       href: '/dashboard/deals',
-      icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1',
+      icon: DollarSign,
     },
     {
       name: 'Xərclər',
       href: '/dashboard/expenses',
-      icon: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z',
+      icon: Receipt,
       requiredRoles: ['manager', 'vp', 'director', 'admin'],
     },
     {
       name: 'Ünsiyyət',
       href: '/dashboard/communications',
-      icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
+      icon: MessageSquare,
     },
     {
       name: 'Hesabatlar',
       href: '/dashboard/reports',
-      icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
+      icon: FileText,
       requiredRoles: ['manager', 'vp', 'director', 'admin'],
     },
     {
       name: 'İstifadəçilər',
       href: '/dashboard/users',
-      icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z',
+      icon: Users,
       requiredRoles: ['admin'],
     },
     {
       name: 'Audit Log',
       href: '/dashboard/audit',
-      icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+      icon: Shield,
       requiredRoles: ['director', 'admin'],
     },
   ];
@@ -98,15 +131,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   });
 
   return (
-    <div className="h-screen flex overflow-hidden bg-slate-50">
+    <div className="h-screen flex overflow-hidden bg-background">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
-        <div className="fixed inset-0 flex z-40 md:hidden">
+        <div className="fixed inset-0 flex z-50 md:hidden">
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
             onClick={() => setSidebarOpen(false)}
           />
-          <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white shadow-2xl">
+          <div className="relative flex-1 flex flex-col max-w-xs w-full bg-card shadow-2xl border-r border-border">
             <div className="absolute top-0 right-0 -mr-12 pt-2">
               <Button
                 variant="ghost"
@@ -114,137 +147,128 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 className="text-white hover:bg-white/10 rounded-full h-10 w-10"
                 onClick={() => setSidebarOpen(false)}
               >
-                <svg
-                  className="h-6 w-6 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
+                <X className="h-6 w-6" />
               </Button>
             </div>
-            <SidebarContent navigation={filteredNavigation} />
+            <SidebarContent 
+              navigation={filteredNavigation} 
+              collapsed={false}
+              onCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+            />
           </div>
         </div>
       )}
 
       {/* Desktop sidebar */}
       <div className="hidden md:flex md:flex-shrink-0">
-        <div className="flex flex-col w-64">
-          <SidebarContent navigation={filteredNavigation} />
+        <div className={`flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-60'}`}>
+          <SidebarContent 
+            navigation={filteredNavigation} 
+            collapsed={sidebarCollapsed}
+            onCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          />
         </div>
       </div>
 
       {/* Main content */}
       <div className="flex flex-col w-0 flex-1 overflow-hidden">
-        <div className="relative z-10 flex-shrink-0 flex h-16 bg-white shadow-sm border-b border-border/40">
+        {/* Header */}
+        <header className="relative z-10 flex-shrink-0 flex h-16 bg-card shadow-sm border-b border-border">
           <Button
             variant="ghost"
             size="icon"
-            className="px-4 border-r border-border/40 text-muted-foreground md:hidden"
+            className="px-4 border-r border-border text-muted-foreground md:hidden"
             onClick={() => setSidebarOpen(true)}
           >
-            <svg
-              className="h-6 w-6"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h7"
-              />
-            </svg>
+            <Menu className="h-6 w-6" />
           </Button>
-          <div className="flex-1 px-4 flex justify-between">
-            <div className="flex-1 flex">
-              <div className="w-full flex md:ml-0">
-                <div className="relative w-full text-gray-400 focus-within:text-gray-600">
-                  <div className="absolute inset-y-0 left-0 flex items-center pointer-events-none">
-                    <svg
-                      className="h-5 w-5"
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </div>
-                  <Input
-                    id="search-field"
-                    className="pl-10 pr-3 h-9 bg-background/60 border-input/60 focus:bg-background"
-                    placeholder="Axtar..."
-                    type="search"
-                    name="search"
-                  />
+          
+          <div className="flex-1 px-4 flex justify-between items-center">
+            {/* Search */}
+            <div className="flex-1 flex max-w-md">
+              <div className="relative w-full">
+                <div className="absolute inset-y-0 left-0 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-muted-foreground" />
                 </div>
+                <Input
+                  id="search-field"
+                  className="pl-10 pr-3 h-9 bg-background/60 border-input focus:bg-background transition-colors"
+                  placeholder="Axtar..."
+                  type="search"
+                  name="search"
+                />
               </div>
             </div>
-            <div className="ml-4 flex items-center md:ml-6">
-              <div className="ml-3 relative">
-                <div className="flex items-center">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    {user?.role}
-                  </span>
-                  <div className="ml-4 flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center">
-                        <span className="text-sm font-medium text-white">
-                          {user?.firstName?.[0]}{user?.lastName?.[0]}
-                        </span>
-                      </div>
+            
+            {/* Header Actions */}
+            <div className="flex items-center space-x-4">
+              {/* Theme Toggle */}
+              <ThemeToggle />
+              
+              {/* Notifications */}
+              <Button variant="ghost" size="icon" className="relative">
+                <Bell className="h-5 w-5" />
+                {notificationCount > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs"
+                  >
+                    {notificationCount}
+                  </Badge>
+                )}
+              </Button>
+              
+              {/* User Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center space-x-2 h-9">
+                    <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+                      <span className="text-sm font-medium text-primary-foreground">
+                        {user?.firstName?.[0]}{user?.lastName?.[0]}
+                      </span>
                     </div>
-                    <div className="ml-3">
-                      <div className="text-sm font-medium text-gray-700">
+                    <div className="hidden md:block text-left">
+                      <div className="text-sm font-medium">
                         {user?.firstName} {user?.lastName}
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-muted-foreground">
                         {user?.branch?.name}
                       </div>
                     </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleLogout}
-                    className="ml-4 text-muted-foreground hover:text-destructive h-8 w-8"
-                  >
-                    <svg
-                      className="h-6 w-6"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                      />
-                    </svg>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   </Button>
-                </div>
-              </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium">{user?.firstName} {user?.lastName}</p>
+                      <p className="text-xs text-muted-foreground">{user?.email}</p>
+                      <Badge variant="outline" className="w-fit text-xs">
+                        {user?.role}
+                      </Badge>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>
+                    <Settings className="mr-2 h-4 w-4" />
+                    Tənzimləmələr
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Users className="mr-2 h-4 w-4" />
+                    Profil
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+                    Çıxış
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
-        </div>
+        </header>
 
-        <main className="flex-1 relative overflow-y-auto focus:outline-none bg-slate-50">
+        {/* Main Content */}
+        <main className="flex-1 relative overflow-y-auto focus:outline-none bg-background">
           <div className="py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
               {children}
@@ -258,77 +282,115 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
 interface SidebarContentProps {
   navigation: NavigationItem[];
+  collapsed: boolean;
+  onCollapse: () => void;
 }
 
-function SidebarContent({ navigation }: SidebarContentProps) {
+function SidebarContent({ navigation, collapsed, onCollapse }: SidebarContentProps) {
   const { user } = useAuth();
+  const pathname = usePathname();
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-white border-r border-gray-200">
+    <div className="flex-1 flex flex-col min-h-0 bg-card border-r border-border">
       <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
-        <div className="flex items-center flex-shrink-0 px-4">
-          <div className="h-8 w-8 bg-blue-600 rounded flex items-center justify-center">
-            <svg
-              className="h-5 w-5 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-              />
-            </svg>
+        {/* Logo & Collapse Button */}
+        <div className="flex items-center justify-between flex-shrink-0 px-4 mb-6">
+          <div className="flex items-center">
+            <div className="h-8 w-8 bg-primary rounded flex items-center justify-center">
+              <Building className="h-5 w-5 text-primary-foreground" />
+            </div>
+            {!collapsed && (
+              <h1 className="ml-3 text-xl font-bold text-foreground transition-opacity">
+                REA INVEST
+              </h1>
+            )}
           </div>
-          <h1 className="ml-3 text-xl font-bold text-gray-900">REA INVEST</h1>
-        </div>
-        <nav className="mt-5 flex-1 px-2 bg-white space-y-1">
-          {navigation.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className="text-gray-600 hover:bg-gray-50 hover:text-gray-900 group flex items-center px-2 py-2 text-sm font-medium rounded-md"
+          {!collapsed && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 text-muted-foreground hover:text-foreground hidden md:flex"
+              onClick={onCollapse}
             >
-              <svg
-                className="text-gray-400 group-hover:text-gray-500 mr-3 flex-shrink-0 h-6 w-6"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+              <Menu className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+        
+        {/* Navigation */}
+        <nav className="flex-1 px-2 space-y-1">
+          {navigation.map((item) => {
+            const isActive = pathname === item.href;
+            const Icon = item.icon;
+            
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`
+                  group flex items-center px-2 py-2 text-sm font-medium rounded-lg transition-colors
+                  ${
+                    isActive
+                      ? 'bg-primary/10 text-primary border-r-2 border-primary'
+                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                  }
+                `}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d={item.icon}
-                />
-              </svg>
-              {item.name}
-            </Link>
-          ))}
+                <Icon className={`flex-shrink-0 h-5 w-5 transition-colors ${
+                  isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-accent-foreground'
+                } ${collapsed ? '' : 'mr-3'}`} />
+                {!collapsed && (
+                  <div className="flex items-center justify-between flex-1">
+                    <span>{item.name}</span>
+                    {item.badge && (
+                      <Badge variant="secondary" className="text-xs">
+                        {item.badge}
+                      </Badge>
+                    )}
+                  </div>
+                )}
+              </Link>
+            )
+          })}
         </nav>
       </div>
-      <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
-        <div className="flex items-center">
-          <div className="flex-shrink-0">
-            <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center">
-              <span className="text-sm font-medium text-white">
-                {user?.firstName?.[0]}{user?.lastName?.[0]}
-              </span>
+      
+      {/* User Info - Bottom */}
+      {!collapsed && (
+        <div className="flex-shrink-0 border-t border-border p-4">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+                <span className="text-sm font-medium text-primary-foreground">
+                  {user?.firstName?.[0]}{user?.lastName?.[0]}
+                </span>
+              </div>
+            </div>
+            <div className="ml-3 flex-1">
+              <p className="text-sm font-medium text-foreground truncate">
+                {user?.firstName} {user?.lastName}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {user?.branch?.name}
+              </p>
             </div>
           </div>
-          <div className="ml-3">
-            <p className="text-sm font-medium text-gray-700 group-hover:text-gray-900">
-              {user?.firstName} {user?.lastName}
-            </p>
-            <p className="text-xs font-medium text-gray-500 group-hover:text-gray-700">
-              {user?.branch?.name}
-            </p>
-          </div>
         </div>
-      </div>
+      )}
+      
+      {/* Collapsed expand button */}
+      {collapsed && (
+        <div className="flex-shrink-0 p-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="w-full h-10 text-muted-foreground hover:text-foreground"
+            onClick={onCollapse}
+          >
+            <Menu className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

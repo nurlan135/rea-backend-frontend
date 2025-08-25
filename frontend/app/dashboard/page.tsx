@@ -4,6 +4,10 @@ import { useAuth } from '@/lib/context/AuthContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import ManagerDashboard from '@/components/dashboard/ManagerDashboard';
+import AgentDashboard from '@/components/dashboard/AgentDashboard';
+import DirectorDashboard from '@/components/dashboard/DirectorDashboard';
+import AdminDashboard from '@/components/dashboard/AdminDashboard';
+import VPDashboard from '@/components/dashboard/VPDashboard';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -15,38 +19,35 @@ export default function DashboardPage() {
       case 'manager':
         return <ManagerDashboard />;
       case 'agent':
-        return (
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Agent Panel</h1>
-            <p className="text-gray-600">Agent dashboardu hazırlanır...</p>
-          </div>
-        );
+        return <AgentDashboard />;
       case 'vp':
-        return (
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">VP Panel</h1>
-            <p className="text-gray-600">VP dashboardu hazırlanır...</p>
-          </div>
-        );
+        return <VPDashboard />;
       case 'director':
-        return (
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Director Panel</h1>
-            <p className="text-gray-600">Director dashboardu hazırlanır...</p>
-          </div>
-        );
+        return <DirectorDashboard />;
       case 'admin':
+        return <AdminDashboard />;
+      case 'call_center':
         return (
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Admin Panel</h1>
-            <p className="text-gray-600">Admin dashboardu hazırlanır...</p>
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Call Center Panel</h1>
+              <p className="text-muted-foreground">Zəng mərkəzi və müştəri xidmətləri</p>
+            </div>
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Call Center dashboardu tezliklə hazır olacaq...</p>
+            </div>
           </div>
         );
       default:
         return (
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Dashboard</h1>
-            <p className="text-gray-600">Xoş gəlmisiniz!</p>
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+              <p className="text-muted-foreground">REA INVEST idarəetmə sisteminə xoş gəlmisiniz!</p>
+            </div>
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Xahiş edirik, sistem administratoru ilə əlaqə saxlayın.</p>
+            </div>
           </div>
         );
     }

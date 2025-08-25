@@ -22,7 +22,7 @@ app.post('/api/auth/login', (req, res) => {
     });
   }
   
-  // Simple check
+  // Simple check - Admin
   if (email === 'admin@rea-invest.com' && password === 'password123') {
     const token = jwt.sign(
       { id: '1', email, role: 'admin', branch: 'YAS' },
@@ -48,6 +48,32 @@ app.post('/api/auth/login', (req, res) => {
     });
   }
   
+  // Simple check - Agent
+  if (email === 'agent@rea-invest.com' && password === 'password123') {
+    const token = jwt.sign(
+      { id: '2', email, role: 'agent', branch: 'YAS' },
+      'dev-secret',
+      { expiresIn: '7d' }
+    );
+    
+    return res.json({
+      success: true,
+      data: {
+        token,
+        user: {
+          id: '2',
+          email: 'agent@rea-invest.com',
+          firstName: 'Agent',
+          lastName: 'User',
+          phone: '+994505551235',
+          role: 'agent',
+          permissions: ['properties:read', 'properties:create', 'customers:read', 'customers:create'],
+          branch: { name: 'Yasamal Filialı', code: 'YAS' }
+        }
+      }
+    });
+  }
+  
   res.status(401).json({
     success: false,
     error: { code: 'INVALID_CREDENTIALS', message: 'Invalid email or password' }
@@ -65,19 +91,28 @@ app.get('/api/auth/me', (req, res) => {
   
   try {
     const decoded = jwt.verify(token, 'dev-secret');
+    
+    // Build user data based on role
+    let userData = {
+      id: decoded.id,
+      email: decoded.email,
+      role: decoded.role,
+      branch: { name: 'Yasamal Filialı', code: decoded.branch }
+    };
+    
+    if (decoded.role === 'admin') {
+      userData.firstName = 'Admin';
+      userData.lastName = 'User';
+      userData.permissions = ['*'];
+    } else if (decoded.role === 'agent') {
+      userData.firstName = 'Agent';
+      userData.lastName = 'User';
+      userData.permissions = ['properties:read', 'properties:create', 'customers:read', 'customers:create'];
+    }
+    
     res.json({
       success: true,
-      data: {
-        user: {
-          id: decoded.id,
-          email: decoded.email,
-          firstName: 'Admin',
-          lastName: 'User',
-          role: decoded.role,
-          permissions: ['*'],
-          branch: { name: 'Yasamal Filialı', code: decoded.branch }
-        }
-      }
+      data: { user: userData }
     });
   } catch (error) {
     res.status(401).json({ success: false, error: { code: 'INVALID_TOKEN' } });
