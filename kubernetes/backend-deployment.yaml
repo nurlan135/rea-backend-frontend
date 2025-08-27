@@ -1,0 +1,209 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: rea-invest
+data:
+  NODE_ENV: "production"
+  DB_HOST: "postgres"
+  DB_PORT: "5432"
+  DB_NAME: "rea_invest_prod"
+  DB_USER: "postgres"
+  REDIS_URL: "redis://:redis_password@redis:6379"
+  USE_REDIS: "true"
+  PORT: "8000"
+  CORS_ORIGIN: "https://rea-invest.com,https://www.rea-invest.com"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backend-secret
+  namespace: rea-invest
+type: Opaque
+data:
+  DB_PASSWORD: cG9zdGdyZXNfcGFzc3dvcmRfY2hhbmdlX21l # base64 encoded
+  JWT_SECRET: eW91ci1zdXBlci1zZWN1cmUtand0LXNlY3JldA== # base64 encoded
+  REDIS_PASSWORD: cmVkaXNfcGFzc3dvcmQ= # base64 encoded
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backend-uploads-pvc
+  namespace: rea-invest
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: rea-invest
+  labels:
+    app: backend
+    component: api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+        component: api
+    spec:
+      containers:
+      - name: backend
+        image: rea-invest/backend:latest
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: NODE_ENV
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: DB_HOST
+        - name: DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: DB_PORT
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: DB_NAME
+        - name: DB_USER
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: DB_USER
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: DB_PASSWORD
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: JWT_SECRET
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: REDIS_URL
+        - name: USE_REDIS
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: USE_REDIS
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: PORT
+        - name: CORS_ORIGIN
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: CORS_ORIGIN
+        volumeMounts:
+        - name: uploads-storage
+          mountPath: /app/uploads
+        - name: logs-storage
+          mountPath: /app/logs
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1001
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+      volumes:
+      - name: uploads-storage
+        persistentVolumeClaim:
+          claimName: backend-uploads-pvc
+      - name: logs-storage
+        emptyDir: {}
+      restartPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: rea-invest
+  labels:
+    app: backend
+    component: api
+spec:
+  selector:
+    app: backend
+  ports:
+  - port: 8000
+    targetPort: 8000
+    name: http
+  type: ClusterIP
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: backend-hpa
+  namespace: rea-invest
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: backend
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

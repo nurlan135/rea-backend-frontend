@@ -3,6 +3,63 @@ const jwt = require('jsonwebtoken');
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     tags: [Authentication]
+ *     summary: User login
+ *     description: Authenticate user and return JWT token
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: admin@rea-invest.com
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: password123
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         token:
+ *                           type: string
+ *                           example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *                         user:
+ *                           $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Invalid credentials or missing fields
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Authentication failed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+
 // Simple login endpoint
 router.post('/login', (req, res) => {
   console.log('Login request:', req.body);
@@ -63,6 +120,34 @@ router.post('/login', (req, res) => {
 });
 
 // Get current user
+/**
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     tags: [Authentication]
+ *     summary: Get current user profile
+ *     description: Get the profile information of the currently authenticated user
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User profile retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.get('/me', (req, res) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];

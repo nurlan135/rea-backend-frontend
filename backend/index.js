@@ -10,6 +10,13 @@ const authRoutes = require('./routes/simple-auth');
 const userRoutes = require('./routes/users');
 const propertyRoutes = require('./routes/properties');
 const customerRoutes = require('./routes/customers');
+const bookingRoutes = require('./routes/bookings');
+const filesRoutes = require('./routes/files');
+const notificationsRoutes = require('./routes/notifications');
+const cacheRoutes = require('./routes/cache');
+const analyticsRoutes = require('./routes/analytics');
+const databaseRoutes = require('./routes/database');
+const swaggerRoutes = require('./routes/swagger');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -55,6 +62,15 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/properties', propertyRoutes);
 app.use('/api/customers', customerRoutes);
+app.use('/api/bookings', bookingRoutes);
+app.use('/api/files', filesRoutes);
+app.use('/api/notifications', notificationsRoutes);
+app.use('/api/cache', cacheRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/database', databaseRoutes);
+
+// API Documentation
+app.use('/api/docs', swaggerRoutes);
 
 // 404 handler
 app.use((req, res) => {

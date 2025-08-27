@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rea-invest
+  labels:
+    name: rea-invest
+    environment: production
+    app: rea-invest-property-management

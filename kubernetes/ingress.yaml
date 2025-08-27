@@ -1,0 +1,109 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rea-invest-ingress
+  namespace: rea-invest
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Frame-Options: DENY";
+      more_set_headers "X-Content-Type-Options: nosniff";
+      more_set_headers "X-XSS-Protection: 1; mode=block";
+      more_set_headers "Referrer-Policy: strict-origin-when-cross-origin";
+      more_set_headers "Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https:; connect-src 'self' https:; frame-ancestors 'none';";
+      more_set_headers "Strict-Transport-Security: max-age=63072000; includeSubDomains; preload";
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  tls:
+  - hosts:
+    - rea-invest.com
+    - www.rea-invest.com
+    - api.rea-invest.com
+    secretName: rea-invest-tls
+  rules:
+  # Main website
+  - host: rea-invest.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 3000
+  - host: www.rea-invest.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 3000
+  
+  # API endpoints
+  - host: api.rea-invest.com
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: backend
+            port:
+              number: 8000
+      - path: /health
+        pathType: Exact
+        backend:
+          service:
+            name: backend
+            port:
+              number: 8000
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rea-invest-monitoring-ingress
+  namespace: rea-invest
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: monitoring-auth
+    nginx.ingress.kubernetes.io/auth-realm: "REA INVEST Monitoring"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  tls:
+  - hosts:
+    - monitoring.rea-invest.com
+    secretName: monitoring-rea-invest-tls
+  rules:
+  - host: monitoring.rea-invest.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: grafana
+            port:
+              number: 3000
+
+---
+# Basic auth secret for monitoring
+apiVersion: v1
+kind: Secret
+metadata:
+  name: monitoring-auth
+  namespace: rea-invest
+type: Opaque
+data:
+  auth: YWRtaW46JGFwcjEkSFE4WkdpQUokZ1BhN0tZQUQ5UW1zWXM4RXQ3eDkv # admin:monitoring_password
