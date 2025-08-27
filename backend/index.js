@@ -4,6 +4,8 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const jwt = require('jsonwebtoken');
+const path = require('path');
 
 const db = require('./database');
 const authRoutes = require('./routes/simple-auth');
@@ -71,6 +73,18 @@ app.use('/api/database', databaseRoutes);
 
 // API Documentation
 app.use('/api/docs', swaggerRoutes);
+
+// Static file serving for uploads
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// File upload routes  
+try {
+  const uploadRouter = require('./routes/upload-local');
+  app.use('/api/uploads', uploadRouter);
+  console.log('✅ Upload routes loaded');
+} catch (error) {
+  console.error('❌ Upload routes error:', error.message);
+}
 
 // 404 handler
 app.use((req, res) => {
