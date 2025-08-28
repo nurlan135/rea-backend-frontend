@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { authenticate, authorize } = require('../middleware/auth');
+const { authenticateToken, requireRole } = require('../middleware/auth');
 const { cache, invalidateCache } = require('../config/cache');
 
 // GET /api/cache/stats - Get cache statistics
-router.get('/stats', authenticate, authorize(['admin', 'manager']), async (req, res) => {
+router.get('/stats', authenticateToken, requireRole(['admin', 'manager']), async (req, res) => {
   try {
     const stats = {
       total_keys: 0,
@@ -39,7 +39,7 @@ router.get('/stats', authenticate, authorize(['admin', 'manager']), async (req, 
 });
 
 // GET /api/cache/keys - Get cache keys (admin only)
-router.get('/keys', authenticate, authorize(['admin']), async (req, res) => {
+router.get('/keys', authenticateToken, requireRole(['admin']), async (req, res) => {
   try {
     const { pattern = '*', limit = 100 } = req.query;
     
@@ -65,7 +65,7 @@ router.get('/keys', authenticate, authorize(['admin']), async (req, res) => {
 });
 
 // GET /api/cache/:key - Get cached value (admin only)
-router.get('/:key', authenticate, authorize(['admin']), async (req, res) => {
+router.get('/:key', authenticateToken, requireRole(['admin']), async (req, res) => {
   try {
     const { key } = req.params;
     const value = await cache.get(key);
@@ -96,7 +96,7 @@ router.get('/:key', authenticate, authorize(['admin']), async (req, res) => {
 });
 
 // DELETE /api/cache/:key - Delete cache key (admin only)
-router.delete('/:key', authenticate, authorize(['admin']), async (req, res) => {
+router.delete('/:key', authenticateToken, requireRole(['admin']), async (req, res) => {
   try {
     const { key } = req.params;
     await cache.del(key);
@@ -116,7 +116,7 @@ router.delete('/:key', authenticate, authorize(['admin']), async (req, res) => {
 });
 
 // DELETE /api/cache/pattern/:pattern - Delete cache keys by pattern (admin only)
-router.delete('/pattern/:pattern', authenticate, authorize(['admin']), async (req, res) => {
+router.delete('/pattern/:pattern', authenticateToken, requireRole(['admin']), async (req, res) => {
   try {
     const { pattern } = req.params;
     await cache.delPattern(pattern);
@@ -136,7 +136,7 @@ router.delete('/pattern/:pattern', authenticate, authorize(['admin']), async (re
 });
 
 // POST /api/cache/invalidate - Invalidate specific cache categories
-router.post('/invalidate', authenticate, authorize(['admin', 'manager']), async (req, res) => {
+router.post('/invalidate', authenticateToken, requireRole(['admin', 'manager']), async (req, res) => {
   try {
     const { categories = [] } = req.body;
 
@@ -197,7 +197,7 @@ router.post('/invalidate', authenticate, authorize(['admin', 'manager']), async 
 });
 
 // DELETE /api/cache - Flush all cache (admin only)
-router.delete('/', authenticate, authorize(['admin']), async (req, res) => {
+router.delete('/', authenticateToken, requireRole(['admin']), async (req, res) => {
   try {
     await cache.flush();
 
@@ -216,7 +216,7 @@ router.delete('/', authenticate, authorize(['admin']), async (req, res) => {
 });
 
 // POST /api/cache/warmup - Warm up cache with frequently accessed data
-router.post('/warmup', authenticate, authorize(['admin', 'manager']), async (req, res) => {
+router.post('/warmup', authenticateToken, requireRole(['admin', 'manager']), async (req, res) => {
   try {
     const { categories = ['properties', 'analytics'] } = req.body;
     const results = {};

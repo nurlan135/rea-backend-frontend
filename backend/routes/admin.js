@@ -981,4 +981,8 @@ router.delete('/branches/:id', authenticateToken, requireAdmin, async (req, res)
   }
 });
 
+// Import and mount users sub-routes
+const usersRouter = require('./admin/users');
+router.use('/users', usersRouter);
+
 module.exports = router;

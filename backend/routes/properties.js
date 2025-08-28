@@ -99,7 +99,7 @@ const checkPropertyPermission = async (req, res, next) => {
     }
 
     // Agents can only access their own properties
-    if (user.role === 'agent' && property.assigned_to_id !== user.id) {
+    if (user.role === 'agent' && property.agent_id !== user.id) {
       return res.status(403).json({
         success: false,
         error: { code: 'INSUFFICIENT_PERMISSIONS', message: 'Bu əmlak üçün icazəniz yoxdur' }
@@ -307,7 +307,7 @@ router.get('/', cacheProperties(600), async (req, res) => {
         'users.last_name as agent_last_name'
       ])
       .leftJoin('districts', 'properties.district_id', 'districts.id')
-      .leftJoin('users', 'properties.assigned_to_id', 'users.id')
+      .leftJoin('users', 'properties.agent_id', 'users.id')
       .where('properties.status', '!=', 'archived');
 
     // Apply database optimization for filtering
@@ -326,7 +326,7 @@ router.get('/', cacheProperties(600), async (req, res) => {
 
     // Apply role-based filtering
     if (user.role === 'agent') {
-      query = query.where('properties.assigned_to_id', user.id);
+      query = query.where('properties.agent_id', user.id);
     } else if (user.role === 'manager') {
       query = query.where('properties.branch_id', user.branch_id);
     }
@@ -471,7 +471,7 @@ router.post('/', invalidateCache('properties:*'), async (req, res) => {
       property_code: propertyCode,
       status: 'pending',
       approval_status: 'pending',
-      assigned_to_id: user.id,
+      agent_id: user.id,
       created_by_id: user.id,
       branch_id: user.branch_id,
       created_at: new Date(),
@@ -527,13 +527,13 @@ router.get('/:id', cacheProperties(300), checkPropertyPermission, async (req, re
       .leftJoin('districts', 'properties.district_id', 'districts.id')
       .leftJoin('streets', 'properties.street_id', 'streets.id')
       .leftJoin('complexes', 'properties.complex_id', 'complexes.id')
-      .leftJoin('users', 'properties.assigned_to_id', 'users.id')
+      .leftJoin('users', 'properties.agent_id', 'users.id')
       .where('properties.id', property.id)
       .first();
 
     // Get related expenses (if user has permission)
     let expenses = [];
-    if (req.user.role !== 'agent' || property.assigned_to_id === req.user.id) {
+    if (req.user.role !== 'agent' || property.agent_id === req.user.id) {
       expenses = await db('property_expenses')
         .where('property_id', property.id)
         .orderBy('created_at', 'desc');

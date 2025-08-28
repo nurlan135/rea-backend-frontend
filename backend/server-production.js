@@ -393,6 +393,31 @@ app.get('/api/analytics/dashboard', authenticateToken, async (req, res) => {
   }
 });
 
+// Admin routes with security middleware
+const adminUserRoutes = require('./routes/admin/users');
+const { 
+  adminRateLimit, 
+  requireAdmin, 
+  requireWhitelistIP, 
+  logRequest, 
+  brutForceProtection,
+  validateSession,
+  securityHeaders
+} = require('./middleware/admin-security');
+
+// Apply admin security middleware to all admin routes
+app.use('/api/admin', securityHeaders);           // Security headers first
+app.use('/api/admin', adminRateLimit);            // Rate limiting
+app.use('/api/admin', logRequest);                // Request logging
+app.use('/api/admin', authenticateToken);         // JWT authentication
+app.use('/api/admin', validateSession);           // Enhanced session validation
+app.use('/api/admin', brutForceProtection);       // Brute force protection
+app.use('/api/admin', requireAdmin);              // Admin role check
+app.use('/api/admin', requireWhitelistIP);        // IP whitelist check
+
+// Mount admin user management routes
+app.use('/api/admin/users', adminUserRoutes);
+
 // Static file serving
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 

@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db');
-const { authenticate, authorize } = require('../middleware/auth');
+const db = require('../database');
+const { authenticateToken, requireRole } = require('../middleware/auth');
 const { validateRequest } = require('../middleware/validation');
 const Joi = require('joi');
 const crypto = require('crypto');
 
 // Get notifications for current user
-router.get('/', authenticate, async (req, res) => {
+router.get('/', authenticateToken, async (req, res) => {
   try {
     const {
       page = 1,
@@ -92,7 +92,7 @@ router.get('/', authenticate, async (req, res) => {
 });
 
 // Get notification by ID
-router.get('/:id', authenticate, async (req, res) => {
+router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const notification = await db('notifications')
       .select(
@@ -135,7 +135,7 @@ router.get('/:id', authenticate, async (req, res) => {
 });
 
 // Create notification
-router.post('/', authenticate, async (req, res) => {
+router.post('/', authenticateToken, async (req, res) => {
   try {
     const schema = Joi.object({
       recipient_id: Joi.string().uuid().required(),
@@ -224,7 +224,7 @@ router.post('/', authenticate, async (req, res) => {
 });
 
 // Mark notification as read
-router.put('/:id/read', authenticate, async (req, res) => {
+router.put('/:id/read', authenticateToken, async (req, res) => {
   try {
     const notification = await db('notifications')
       .where('id', req.params.id)
@@ -276,7 +276,7 @@ router.put('/:id/read', authenticate, async (req, res) => {
 });
 
 // Mark all notifications as read
-router.put('/read-all', authenticate, async (req, res) => {
+router.put('/read-all', authenticateToken, async (req, res) => {
   try {
     await db('notifications')
       .where('recipient_id', req.user.id)
@@ -305,7 +305,7 @@ router.put('/read-all', authenticate, async (req, res) => {
 });
 
 // Delete notification
-router.delete('/:id', authenticate, async (req, res) => {
+router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const notification = await db('notifications')
       .where('id', req.params.id)
@@ -346,7 +346,7 @@ router.delete('/:id', authenticate, async (req, res) => {
 });
 
 // Batch operations
-router.post('/batch', authenticate, async (req, res) => {
+router.post('/batch', authenticateToken, async (req, res) => {
   try {
     const { action, notification_ids } = req.body;
 
@@ -409,7 +409,7 @@ router.post('/batch', authenticate, async (req, res) => {
 });
 
 // Get notification settings for current user
-router.get('/settings', authenticate, async (req, res) => {
+router.get('/settings', authenticateToken, async (req, res) => {
   try {
     const settings = await db('notification_settings')
       .where('user_id', req.user.id)
@@ -454,7 +454,7 @@ router.get('/settings', authenticate, async (req, res) => {
 });
 
 // Update notification settings
-router.put('/settings', authenticate, async (req, res) => {
+router.put('/settings', authenticateToken, async (req, res) => {
   try {
     const schema = Joi.object({
       email_notifications: Joi.boolean().optional(),
@@ -516,7 +516,7 @@ router.put('/settings', authenticate, async (req, res) => {
 });
 
 // Send bulk notifications (admin only)
-router.post('/broadcast', authenticate, authorize(['admin', 'manager']), async (req, res) => {
+router.post('/broadcast', authenticateToken, requireRole(['admin', 'manager']), async (req, res) => {
   try {
     const schema = Joi.object({
       recipient_roles: Joi.array().items(Joi.string()).optional(),

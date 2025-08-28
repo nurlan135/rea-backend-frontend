@@ -3,7 +3,7 @@
 import React from 'react';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import UserMenu from '@/components/auth/UserMenu';
-import { useAuth } from '@/lib/auth/AuthContext';
+import { useAuth } from '@/lib/context/AuthContext';
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -40,7 +40,7 @@ const DashboardPage = () => {
                 <div className="flex-shrink-0">
                   <div className="h-16 w-16 bg-blue-600 rounded-full flex items-center justify-center">
                     <span className="text-white font-bold text-xl">
-                      {user?.firstName?.charAt(0) || 'U'}{user?.lastName?.charAt(0) || 'S'}
+                      {user?.first_name?.charAt(0) || 'U'}{user?.last_name?.charAt(0) || 'S'}
                     </span>
                   </div>
                 </div>
@@ -50,11 +50,11 @@ const DashboardPage = () => {
                       Xoş gəlmisiniz
                     </dt>
                     <dd className="text-lg font-medium text-gray-900">
-                      {user?.firstName || 'İstifadəçi'} {user?.lastName || ''}
+                      {user?.first_name || 'İstifadəçi'} {user?.last_name || ''}
                     </dd>
                     <dd className="text-sm text-gray-500">
-                      {user?.role?.displayName || user?.role?.name || 'Rol yoxdur'}
-                      {user?.branch && ` - ${user.branch.name}`}
+                      {user?.role || 'Rol yoxdur'}
+                      {user?.branch_code && ` - ${user.branch_code}`}
                     </dd>
                   </dl>
                 </div>

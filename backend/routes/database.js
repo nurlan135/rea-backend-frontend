@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { authenticate, authorize } = require('../middleware/auth');
+const { authenticateToken, requireRole } = require('../middleware/auth');
 const { DatabaseOptimizer } = require('../config/database-optimization');
 const db = require('../database');
 
 const dbOptimizer = new DatabaseOptimizer(db);
 
 // GET /api/database/stats - Get database performance statistics
-router.get('/stats', authenticate, authorize(['admin']), async (req, res) => {
+router.get('/stats', authenticateToken, requireRole(['admin']), async (req, res) => {
   try {
     const stats = await dbOptimizer.getDatabaseStats();
     
@@ -26,7 +26,7 @@ router.get('/stats', authenticate, authorize(['admin']), async (req, res) => {
 });
 
 // GET /api/database/pool - Get connection pool information
-router.get('/pool', authenticate, authorize(['admin']), async (req, res) => {
+router.get('/pool', authenticateToken, requireRole(['admin']), async (req, res) => {
   try {
     const poolInfo = await dbOptimizer.getPoolInfo();
     
@@ -45,7 +45,7 @@ router.get('/pool', authenticate, authorize(['admin']), async (req, res) => {
 });
 
 // GET /api/database/slow-queries - Get slow query analysis
-router.get('/slow-queries', authenticate, authorize(['admin']), async (req, res) => {
+router.get('/slow-queries', authenticateToken, requireRole(['admin']), async (req, res) => {
   try {
     const { min_duration = 1000 } = req.query;
     const slowQueries = await dbOptimizer.getSlowQueries(parseInt(min_duration));
@@ -65,7 +65,7 @@ router.get('/slow-queries', authenticate, authorize(['admin']), async (req, res)
 });
 
 // POST /api/database/analyze-query - Analyze a specific query
-router.post('/analyze-query', authenticate, authorize(['admin']), async (req, res) => {
+router.post('/analyze-query', authenticateToken, requireRole(['admin']), async (req, res) => {
   try {
     const { query } = req.body;
     
@@ -105,7 +105,7 @@ router.post('/analyze-query', authenticate, authorize(['admin']), async (req, re
 });
 
 // GET /api/database/suggestions/:table - Get optimization suggestions
-router.get('/suggestions/:table', authenticate, authorize(['admin']), async (req, res) => {
+router.get('/suggestions/:table', authenticateToken, requireRole(['admin']), async (req, res) => {
   try {
     const { table } = req.params;
     const { filters } = req.query;
@@ -139,7 +139,7 @@ router.get('/suggestions/:table', authenticate, authorize(['admin']), async (req
 });
 
 // POST /api/database/analyze-tables - Analyze table statistics
-router.post('/analyze-tables', authenticate, authorize(['admin']), async (req, res) => {
+router.post('/analyze-tables', authenticateToken, requireRole(['admin']), async (req, res) => {
   try {
     const { tables = [] } = req.body;
     
@@ -160,7 +160,7 @@ router.post('/analyze-tables', authenticate, authorize(['admin']), async (req, r
 });
 
 // POST /api/database/vacuum-tables - Vacuum tables
-router.post('/vacuum-tables', authenticate, authorize(['admin']), async (req, res) => {
+router.post('/vacuum-tables', authenticateToken, requireRole(['admin']), async (req, res) => {
   try {
     const { tables = [] } = req.body;
     
@@ -181,7 +181,7 @@ router.post('/vacuum-tables', authenticate, authorize(['admin']), async (req, re
 });
 
 // GET /api/database/table-stats/:table - Get specific table statistics
-router.get('/table-stats/:table', authenticate, authorize(['admin']), async (req, res) => {
+router.get('/table-stats/:table', authenticateToken, requireRole(['admin']), async (req, res) => {
   try {
     const { table } = req.params;
     
@@ -232,7 +232,7 @@ router.get('/table-stats/:table', authenticate, authorize(['admin']), async (req
 });
 
 // GET /api/database/health - Database health check
-router.get('/health', authenticate, authorize(['admin', 'manager']), async (req, res) => {
+router.get('/health', authenticateToken, requireRole(['admin', 'manager']), async (req, res) => {
   try {
     const startTime = Date.now();
     
@@ -286,7 +286,7 @@ router.get('/health', authenticate, authorize(['admin', 'manager']), async (req,
 });
 
 // GET /api/database/performance-report - Comprehensive performance report
-router.get('/performance-report', authenticate, authorize(['admin']), async (req, res) => {
+router.get('/performance-report', authenticateToken, requireRole(['admin']), async (req, res) => {
   try {
     const { hours = 24 } = req.query;
     

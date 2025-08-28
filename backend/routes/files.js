@@ -5,7 +5,7 @@ const fs = require('fs').promises;
 const sharp = require('sharp');
 const router = express.Router();
 const db = require('../database');
-const { authenticateTokenToken } = require('../middleware/auth');
+const { authenticateToken } = require('../middleware/auth');
 const { validateRequired, validateEmail, sanitizeInput } = require('../middleware/validation');
 const Joi = require('joi');
 const crypto = require('crypto');
@@ -48,7 +48,7 @@ const upload = multer({
 });
 
 // Chunked upload handler for large files
-router.post('/upload/chunk', authenticateTokenToken, async (req, res) => {
+router.post('/upload/chunk', authenticateToken, async (req, res) => {
   try {
     const { chunk, chunkIndex, totalChunks, fileName, fileId } = req.body;
     
@@ -130,7 +130,7 @@ router.post('/upload/chunk', authenticateTokenToken, async (req, res) => {
 });
 
 // Standard file upload
-router.post('/upload', authenticateTokenToken, upload.array('files', 20), async (req, res) => {
+router.post('/upload', authenticateToken, upload.array('files', 20), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({
@@ -215,7 +215,7 @@ router.post('/upload', authenticateTokenToken, upload.array('files', 20), async 
 });
 
 // Get files with pagination and filtering
-router.get('/', authenticateTokenToken, async (req, res) => {
+router.get('/', authenticateToken, async (req, res) => {
   try {
     const {
       page = 1,

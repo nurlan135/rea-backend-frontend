@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useAuth } from '@/lib/auth/AuthContext';
+import { useAuth } from '@/lib/context/AuthContext';
 import LogoutButton from './LogoutButton';
 
 interface UserMenuProps {
@@ -71,16 +71,16 @@ const UserMenu: React.FC<UserMenuProps> = ({ className = '' }) => {
       >
         {/* User avatar */}
         <div className="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
-          {getInitials(user.firstName, user.lastName)}
+          {getInitials(user.first_name, user.last_name)}
         </div>
         
         {/* User info */}
         <div className="hidden sm:block text-left">
           <p className="text-sm font-medium text-gray-900">
-            {user.firstName} {user.lastName}
+            {user.first_name} {user.last_name}
           </p>
           <p className="text-xs text-gray-500">
-            {getRoleDisplayName(user.role.name)}
+            {getRoleDisplayName(user.role)}
           </p>
         </div>
         
@@ -112,14 +112,11 @@ const UserMenu: React.FC<UserMenuProps> = ({ className = '' }) => {
             <div className="px-4 py-3 border-b border-gray-200">
               <div className="flex items-center space-x-3">
                 <div className="h-12 w-12 bg-blue-600 rounded-full flex items-center justify-center text-white text-lg font-medium">
-                  {getInitials(user.firstName, user.lastName)}
+                  {getInitials(user.first_name, user.last_name)}
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-900">
-                    {user.firstName} {user.lastName}
-                    {user.fatherName && (
-                      <span className="text-gray-600"> {user.fatherName}</span>
-                    )}
+                    {user.first_name} {user.last_name}
                   </p>
                   <p className="text-xs text-gray-500">{user.email}</p>
                   {user.phone && (
@@ -132,17 +129,17 @@ const UserMenu: React.FC<UserMenuProps> = ({ className = '' }) => {
               <div className="mt-2">
                 <span className={`
                   inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border
-                  ${getRoleBadgeColor(user.role.name)}
+                  ${getRoleBadgeColor(user.role)}
                 `}>
-                  {getRoleDisplayName(user.role.name)}
+                  {getRoleDisplayName(user.role)}
                 </span>
               </div>
               
               {/* Branch info */}
-              {user.branch && (
+              {user.branch_code && (
                 <div className="mt-2">
                   <p className="text-xs text-gray-500">
-                    <span className="font-medium">Filial:</span> {user.branch.name} ({user.branch.code})
+                    <span className="font-medium">Filial:</span> {user.branch_code}
                   </p>
                 </div>
               )}
@@ -157,13 +154,13 @@ const UserMenu: React.FC<UserMenuProps> = ({ className = '' }) => {
                 </div>
                 <div className="flex justify-between text-xs">
                   <span className="text-gray-500">Hesab statusu:</span>
-                  <span className={`font-medium ${user.isActive ? 'text-green-600' : 'text-red-600'}`}>
-                    {user.isActive ? 'Aktiv' : 'Deaktiv'}
+                  <span className="font-medium text-green-600">
+                    Aktiv
                   </span>
                 </div>
                 <div className="flex justify-between text-xs">
                   <span className="text-gray-500">İcazə səviyyəsi:</span>
-                  <span className="text-gray-900">{user.role.hierarchyLevel}</span>
+                  <span className="text-gray-900">{user.role}</span>
                 </div>
               </div>
             </div>
@@ -172,7 +169,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ className = '' }) => {
             <div className="px-4 py-3 border-b border-gray-200">
               <p className="text-xs font-medium text-gray-700 mb-2">İcazələr:</p>
               <div className="flex flex-wrap gap-1">
-                {user.role.permissions.slice(0, 4).map((permission, index) => (
+                {user.permissions.slice(0, 4).map((permission, index) => (
                   <span
                     key={index}
                     className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700"
@@ -180,9 +177,9 @@ const UserMenu: React.FC<UserMenuProps> = ({ className = '' }) => {
                     {permission === '*' ? 'Tam giriş' : permission}
                   </span>
                 ))}
-                {user.role.permissions.length > 4 && (
+                {user.permissions.length > 4 && (
                   <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700">
-                    +{user.role.permissions.length - 4} əlavə
+                    +{user.permissions.length - 4} əlavə
                   </span>
                 )}
               </div>

@@ -28,7 +28,7 @@ const checkBookingPermission = async (req, res, next) => {
     const booking = await db('property_bookings')
       .select([
         'property_bookings.*',
-        'properties.assigned_to_id'
+        'properties.agent_id'
       ])
       .leftJoin('properties', 'property_bookings.property_id', 'properties.id')
       .where('property_bookings.id', id)
@@ -42,7 +42,7 @@ const checkBookingPermission = async (req, res, next) => {
     }
 
     // Agents can only access bookings for their own properties
-    if (user.role === 'agent' && booking.assigned_to_id !== user.id && booking.created_by !== user.id) {
+    if (user.role === 'agent' && booking.agent_id !== user.id && booking.created_by !== user.id) {
       return res.status(403).json({
         success: false,
         error: { code: 'INSUFFICIENT_PERMISSIONS', message: 'Bu bron üçün icazəniz yoxdur' }
@@ -222,7 +222,7 @@ router.get('/', async (req, res) => {
 
     // Apply role-based filtering
     if (user.role === 'agent') {
-      query = query.where('properties.assigned_to_id', user.id);
+      query = query.where('properties.agent_id', user.id);
     } else if (user.role === 'manager') {
       query = query.where('properties.branch_id', user.branch_id);
     }

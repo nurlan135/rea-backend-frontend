@@ -3,8 +3,7 @@
 import React, { useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { useAuth } from '@/lib/auth/AuthContext';
-import LoginForm from '@/components/auth/LoginForm';
+import { useAuth } from '@/lib/context/AuthContext';
 
 // Loading component for login form
 const LoginFormSkeleton = () => (

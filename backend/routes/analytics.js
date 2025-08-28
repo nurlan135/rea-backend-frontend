@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db');
-const { authenticate, authorize } = require('../middleware/auth');
+const db = require('../database');
+const { authenticateToken, requireRole } = require('../middleware/auth');
 const { validateRequest } = require('../middleware/validation');
 const { cacheAnalytics } = require('../middleware/cache');
 const Joi = require('joi');
 
 // Analytics endpoint for properties
-router.get('/', authenticate, cacheAnalytics('properties', 1800), async (req, res) => {
+router.get('/', authenticateToken, cacheAnalytics('properties', 1800), async (req, res) => {
   try {
     const userId = req.user.id;
     const userRole = req.user.role;
@@ -155,7 +155,7 @@ router.get('/', authenticate, cacheAnalytics('properties', 1800), async (req, re
 });
 
 // Search analytics endpoint
-router.get('/search', authenticate, async (req, res) => {
+router.get('/search', authenticateToken, async (req, res) => {
   try {
     const { timeframe = '30d' } = req.query;
     
@@ -196,7 +196,7 @@ router.get('/search', authenticate, async (req, res) => {
 });
 
 // Agent performance analytics
-router.get('/agents', authenticate, authorize(['manager', 'admin']), async (req, res) => {
+router.get('/agents', authenticateToken, requireRole(['manager', 'admin']), async (req, res) => {
   try {
     const agentPerformance = await db('properties')
       .select(
@@ -246,7 +246,7 @@ router.get('/agents', authenticate, authorize(['manager', 'admin']), async (req,
 });
 
 // Market trends analytics
-router.get('/market-trends', authenticate, async (req, res) => {
+router.get('/market-trends', authenticateToken, async (req, res) => {
   try {
     const { period = '6m' } = req.query;
     

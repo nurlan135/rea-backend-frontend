@@ -10,6 +10,7 @@ const path = require('path');
 const db = require('./database');
 const authRoutes = require('./routes/simple-auth');
 const userRoutes = require('./routes/users');
+const adminRoutes = require('./routes/admin');
 const propertyRoutes = require('./routes/properties');
 const customerRoutes = require('./routes/customers');
 const bookingRoutes = require('./routes/bookings');
@@ -50,6 +51,12 @@ app.use('/api/auth', (req, res, next) => {
   next();
 });
 
+// Admin debug middleware
+app.use('/api/admin', (req, res, next) => {
+  console.log('Admin route hit:', req.method, req.originalUrl, req.path);
+  next();
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ 
@@ -62,6 +69,7 @@ app.get('/health', (req, res) => {
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api/properties', propertyRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/bookings', bookingRoutes);
