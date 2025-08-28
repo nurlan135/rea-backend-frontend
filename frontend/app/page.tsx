@@ -2,82 +2,78 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/context/AuthContext';
-import { AuthService } from '@/lib/auth';
+import { useAuth } from '@/lib/auth/AuthContext';
 import Link from 'next/link';
 
 export default function Home() {
+  const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
-  const { isAuthenticated, isLoading, user } = useAuth();
 
   useEffect(() => {
-    // Redirect authenticated users to their dashboard
-    if (!isLoading && isAuthenticated && user) {
-      const dashboardUrl = AuthService.getDashboardUrl(user.role);
-      router.push(dashboardUrl);
+    if (!isLoading) {
+      if (isAuthenticated) {
+        // Redirect authenticated users to dashboard
+        router.push('/dashboard');
+      } else {
+        // Redirect unauthenticated users to login
+        router.push('/login');
+      }
     }
-  }, [isAuthenticated, isLoading, user, router]);
+  }, [isAuthenticated, isLoading, router]);
 
-  // Show loading state while checking authentication
-  if (isLoading) {
+  // Show loading while checking authentication or redirecting
+  if (isLoading || (!isLoading && (isAuthenticated || !isAuthenticated))) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="flex flex-col items-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600">Yüklənir...</p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8 text-center">
+          <div>
+            <div className="mx-auto h-20 w-20 flex items-center justify-center rounded-full bg-blue-600 shadow-lg">
+              <svg
+                className="h-10 w-10 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                />
+              </svg>
+            </div>
+            <h1 className="mt-6 text-4xl font-extrabold text-gray-900">
+              REA INVEST
+            </h1>
+            <p className="mt-2 text-lg text-gray-600">
+              Əmlak İdarəetmə Sistemi
+            </p>
+            <p className="mt-1 text-sm text-gray-500">
+              Real Estate Management System
+            </p>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-xl p-6">
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
+              <span className="text-gray-600">Yönləndirilir...</span>
+            </div>
+            
+            <div className="mt-6 text-xs text-gray-500 bg-gray-50 rounded-lg p-4">
+              <p className="font-semibold text-gray-700 mb-2">Manual Giriş:</p>
+              <Link 
+                href="/login"
+                className="text-blue-600 hover:text-blue-700 underline"
+              >
+                Login səhifəsinə gedin
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
-  // Don't render home page content if user is authenticated
-  if (isAuthenticated) {
-    return null;
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 text-center">
-        <div>
-          <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-blue-100">
-            <svg
-              className="h-8 w-8 text-blue-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-              />
-            </svg>
-          </div>
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            REA INVEST
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Əmlak İdarəetmə Sistemi
-          </p>
-        </div>
-        
-        <div className="space-y-4">
-          <Link
-            href="/login"
-            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-          >
-            Sistemə Daxil Ol
-          </Link>
-          
-          <div className="text-xs text-gray-500 space-y-1">
-            <p>Test istifadəçisi:</p>
-            <p>E-poçt: admin@rea-invest.com</p>
-            <p>Şifrə: password123</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  return null;
 }

@@ -4,10 +4,10 @@ const config = require('../knexfile');
 
 // Test database configuration
 const testConfig = {
-  ...config.development,
+  ...config.test,
   connection: {
-    ...config.development.connection,
-    database: 'rea_invest_test'
+    ...config.test.connection,
+    database: 'myapp_test_db'
   }
 };
 
@@ -25,7 +25,7 @@ const setupTestDatabase = async () => {
     });
 
     try {
-      await adminDb.raw('CREATE DATABASE rea_invest_test');
+      await adminDb.raw('CREATE DATABASE myapp_test_db');
     } catch (error) {
       // Database already exists, ignore error
       if (!error.message.includes('already exists')) {

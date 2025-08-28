@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "@/lib/context/AuthContext";
-import { ThemeProvider } from "@/components/theme/ThemeProvider";
+import { AuthProvider } from "@/lib/auth/AuthContext";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -32,16 +31,9 @@ export default function RootLayout({
         className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}
         suppressHydrationWarning
       >
-        <ThemeProvider
-          defaultTheme="system"
-          enableSystem
-          storageKey="rea-invest-theme"
-          attribute="class"
-        >
-          <AuthProvider>
-            {children}
-          </AuthProvider>
-        </ThemeProvider>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

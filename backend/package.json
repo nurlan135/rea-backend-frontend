@@ -9,9 +9,9 @@
     "seed": "knex seed:run",
     "rollback": "knex migrate:rollback",
     "make-migration": "knex migrate:make",
-    "test": "NODE_ENV=test jest",
-    "test:watch": "NODE_ENV=test jest --watch",
-    "test:coverage": "NODE_ENV=test jest --coverage",
+    "test": "set NODE_ENV=test && jest",
+    "test:watch": "set NODE_ENV=test && jest --watch",
+    "test:coverage": "set NODE_ENV=test && jest --coverage",
     "docs:generate": "swagger-jsdoc -d swaggerDef.js './routes/*.js' -o './docs/swagger.json'",
     "docs:serve": "swagger-ui-serve ./docs/swagger.json"
   },
@@ -38,9 +38,10 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "jest": "^29.7.0",
     "nodemon": "^3.0.2",
-    "supertest": "^6.3.3"
+    "supertest": "^6.3.4"
   },
   "main": "index.js",
   "keywords": [],

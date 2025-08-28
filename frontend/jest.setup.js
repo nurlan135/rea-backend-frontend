@@ -16,85 +16,12 @@ jest.mock('next/navigation', () => ({
     return new URLSearchParams();
   },
   usePathname() {
-    return '/';
+    return '';
   },
 }));
 
-// Mock Next.js image component
-jest.mock('next/image', () => ({
-  __esModule: true,
-  default: (props) => {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img {...props} />;
-  },
-}));
-
-// Mock ResizeObserver
-global.ResizeObserver = jest.fn().mockImplementation(() => ({
-  observe: jest.fn(),
-  unobserve: jest.fn(),
-  disconnect: jest.fn(),
-}));
-
-// Mock IntersectionObserver
-global.IntersectionObserver = jest.fn().mockImplementation(() => ({
-  observe: jest.fn(),
-  unobserve: jest.fn(),
-  disconnect: jest.fn(),
-}));
-
-// Mock matchMedia
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: jest.fn().mockImplementation(query => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: jest.fn(), // deprecated
-    removeListener: jest.fn(), // deprecated
-    addEventListener: jest.fn(),
-    removeEventListener: jest.fn(),
-    dispatchEvent: jest.fn(),
-  })),
-});
-
-// Mock HTMLDialogElement methods
-HTMLDialogElement.prototype.show = jest.fn();
-HTMLDialogElement.prototype.showModal = jest.fn();
-HTMLDialogElement.prototype.close = jest.fn();
-
-// Setup fetch mock
+// Mock fetch globally
 global.fetch = jest.fn();
 
-// Mock console methods to reduce noise in tests
-const originalError = console.error;
-const originalWarn = console.warn;
-
-beforeEach(() => {
-  console.error = jest.fn();
-  console.warn = jest.fn();
-});
-
-afterEach(() => {
-  console.error = originalError;
-  console.warn = originalWarn;
-  jest.clearAllMocks();
-});
-
-// Add custom Jest matchers
-expect.extend({
-  toBeAfter(received, expected) {
-    const pass = new Date(received) > new Date(expected);
-    if (pass) {
-      return {
-        message: () => `expected ${received} not to be after ${expected}`,
-        pass: true,
-      };
-    } else {
-      return {
-        message: () => `expected ${received} to be after ${expected}`,
-        pass: false,
-      };
-    }
-  },
-});
+// Setup environment variables for tests
+process.env.NEXT_PUBLIC_API_URL = 'http://localhost:8000';

@@ -4,9 +4,9 @@ const path = require('path');
 const fs = require('fs').promises;
 const sharp = require('sharp');
 const router = express.Router();
-const db = require('../db');
-const { authenticate, authorize } = require('../middleware/auth');
-const { validateRequest } = require('../middleware/validation');
+const db = require('../database');
+const { authenticateTokenToken } = require('../middleware/auth');
+const { validateRequired, validateEmail, sanitizeInput } = require('../middleware/validation');
 const Joi = require('joi');
 const crypto = require('crypto');
 
@@ -48,7 +48,7 @@ const upload = multer({
 });
 
 // Chunked upload handler for large files
-router.post('/upload/chunk', authenticate, async (req, res) => {
+router.post('/upload/chunk', authenticateTokenToken, async (req, res) => {
   try {
     const { chunk, chunkIndex, totalChunks, fileName, fileId } = req.body;
     
@@ -130,7 +130,7 @@ router.post('/upload/chunk', authenticate, async (req, res) => {
 });
 
 // Standard file upload
-router.post('/upload', authenticate, upload.array('files', 20), async (req, res) => {
+router.post('/upload', authenticateTokenToken, upload.array('files', 20), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({
@@ -215,7 +215,7 @@ router.post('/upload', authenticate, upload.array('files', 20), async (req, res)
 });
 
 // Get files with pagination and filtering
-router.get('/', authenticate, async (req, res) => {
+router.get('/', authenticateTokenToken, async (req, res) => {
   try {
     const {
       page = 1,
@@ -293,7 +293,7 @@ router.get('/', authenticate, async (req, res) => {
 });
 
 // Get single file
-router.get('/:id', authenticate, async (req, res) => {
+router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const file = await db('files')
       .select(
@@ -336,7 +336,7 @@ router.get('/:id', authenticate, async (req, res) => {
 });
 
 // Download file
-router.get('/:id/download', authenticate, async (req, res) => {
+router.get('/:id/download', authenticateToken, async (req, res) => {
   try {
     const file = await db('files')
       .where('id', req.params.id)
@@ -386,7 +386,7 @@ router.get('/:id/download', authenticate, async (req, res) => {
 });
 
 // Batch operations
-router.post('/batch', authenticate, async (req, res) => {
+router.post('/batch', authenticateToken, async (req, res) => {
   try {
     const { action, file_ids } = req.body;
 
@@ -476,7 +476,7 @@ router.post('/batch', authenticate, async (req, res) => {
 });
 
 // Update file metadata
-router.put('/:id', authenticate, async (req, res) => {
+router.put('/:id', authenticateToken, async (req, res) => {
   try {
     const schema = Joi.object({
       category: Joi.string().optional(),
@@ -541,7 +541,7 @@ router.put('/:id', authenticate, async (req, res) => {
 });
 
 // Soft delete file
-router.delete('/:id', authenticate, async (req, res) => {
+router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const file = await db('files')
       .where('id', req.params.id)

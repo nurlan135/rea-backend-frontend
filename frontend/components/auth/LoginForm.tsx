@@ -1,213 +1,277 @@
 'use client';
 
-import { useForm } from 'react-hook-form';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/context/AuthContext';
-import { LoginCredentials } from '@/lib/types/auth';
-import { AuthService } from '@/lib/auth';
-import { useState } from 'react';
+import { useAuth } from '@/lib/auth/AuthContext';
+import { loginSchema, formatZodErrors, type LoginFormData } from '@/lib/validations/authSchema';
+import { AuthError } from '@/lib/auth/authService';
 
-// shadcn/ui components
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+interface LoginFormProps {
+  redirectTo?: string;
+  onSuccess?: (user: any) => void;
+  onError?: (error: AuthError) => void;
+  isModal?: boolean;
+}
 
-export default function LoginForm() {
+const LoginForm: React.FC<LoginFormProps> = ({
+  redirectTo = '/dashboard',
+  onSuccess,
+  onError,
+  isModal = false
+}) => {
+  const { login } = useAuth();
   const router = useRouter();
-  const { login, isLoading } = useAuth();
-  const [generalError, setGeneralError] = useState<string>('');
-
-  const form = useForm<LoginCredentials>({
-    defaultValues: {
-      email: '',
-      password: '',
-    },
+  
+  const [formData, setFormData] = useState<LoginFormData>({
+    email: '',
+    password: '',
+    remember_me: false
   });
+  
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  const onSubmit = async (data: LoginCredentials) => {
-    setGeneralError('');
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+    
+    // Clear field error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Client-side validation
+    const validation = loginSchema.safeParse(formData);
+    if (!validation.success) {
+      setErrors(formatZodErrors(validation.error));
+      return;
+    }
+    
+    setIsLoading(true);
+    setErrors({});
+    
     try {
-      await login(data);
+      await login(validation.data);
       
-      // Get user and redirect based on role
-      const user = AuthService.getUser();
-      if (user) {
-        const dashboardUrl = AuthService.getDashboardUrl(user.role);
-        router.push(dashboardUrl);
-      } else {
-        router.push('/dashboard');
+      // Handle successful login
+      if (onSuccess) {
+        onSuccess(validation.data);
       }
-    } catch (error) {
-      setGeneralError(error instanceof Error ? error.message : 'Giriş zamanı xəta baş verdi');
+      
+      if (!isModal) {
+        // Check for redirect parameter in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirectUrl = urlParams.get('redirect') || redirectTo;
+        router.push(redirectUrl);
+      }
+      
+    } catch (error: any) {
+      let authError: AuthError;
+      
+      if (error instanceof AuthError) {
+        authError = error;
+      } else if (error?.response?.data?.error) {
+        authError = new AuthError(
+          error.response.data.error.code || 'UNKNOWN_ERROR',
+          error.response.data.error.message || 'Gözlənilməz xəta baş verdi',
+          error.response.status || 0
+        );
+      } else {
+        authError = new AuthError(
+          'NETWORK_ERROR',
+          'Şəbəkə xətası. İnternet bağlantınızı yoxlayın',
+          0
+        );
+      }
+      
+      // Handle specific error cases
+      if (authError.code === 'ACCOUNT_LOCKED') {
+        setErrors({ form: `${authError.message}. 15 dəqiqə sonra yenidən cəhd edin.` });
+      } else if (authError.code === 'TOO_MANY_ATTEMPTS') {
+        setErrors({ form: authError.message });
+      } else if (authError.code === 'INVALID_CREDENTIALS') {
+        setErrors({ 
+          email: 'Email və ya parol yanlışdır',
+          password: 'Email və ya parol yanlışdır'
+        });
+      } else {
+        setErrors({ form: authError.message });
+      }
+      
+      if (onError) {
+        onError(authError);
+      }
+      
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full">
-        <Card className="shadow-2xl border-0">
-          <CardHeader className="space-y-2 text-center pb-8">
-            <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-blue-800 shadow-lg">
-              <svg
-                className="h-8 w-8 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                />
-              </svg>
-            </div>
-            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-              REA INVEST
-            </CardTitle>
-            <CardDescription className="text-base text-muted-foreground">
-              Hesabınıza daxil olun
-            </CardDescription>
-          </CardHeader>
-          
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="email"
-                  rules={{
-                    required: 'E-poçt ünvanı tələb olunur',
-                    pattern: {
-                      value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                      message: 'Keçərli e-poçt ünvanı daxil edin'
-                    }
-                  }}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>E-poçt ünvanı</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="e-poçt@nümunə.com"
-                          type="email"
-                          autoComplete="email"
-                          disabled={form.formState.isSubmitting || isLoading}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="password"
-                  rules={{
-                    required: 'Şifrə tələb olunur',
-                    minLength: {
-                      value: 6,
-                      message: 'Şifrə ən azı 6 simvol olmalıdır'
-                    }
-                  }}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Şifrə</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Şifrənizi daxil edin"
-                          type="password"
-                          autoComplete="current-password"
-                          disabled={form.formState.isSubmitting || isLoading}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {generalError && (
-                  <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-4">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0">
-                        <svg
-                          className="h-5 w-5 text-destructive"
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                          aria-hidden="true"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </div>
-                      <div className="ml-3">
-                        <p className="text-sm text-destructive font-medium">{generalError}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <Button 
-                  type="submit" 
-                  className="w-full h-11 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-md hover:shadow-lg"
-                  disabled={form.formState.isSubmitting || isLoading}
-                  size="lg"
-                >
-                  {form.formState.isSubmitting || isLoading ? (
-                    <div className="flex items-center">
-                      <svg
-                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      Daxil olunur...
-                    </div>
-                  ) : (
-                    'Daxil ol'
-                  )}
-                </Button>
-
-                <div className="text-center">
-                  <p className="text-xs text-muted-foreground">
-                    Test məlumatları: admin@rea-invest.com / password123
-                  </p>
-                </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+    <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+      {/* Email field */}
+      <div>
+        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+          Email
+        </label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+          value={formData.email}
+          onChange={handleChange}
+          disabled={isLoading}
+          className={`
+            relative block w-full px-3 py-2 border rounded-lg text-gray-900 
+            placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 
+            focus:border-blue-500 sm:text-sm transition-colors
+            ${errors.email ? 'border-red-500 bg-red-50' : 'border-gray-300'}
+            ${isLoading ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}
+          `}
+          placeholder="admin@rea-invest.com"
+          aria-describedby={errors.email ? 'email-error' : undefined}
+        />
+        {errors.email && (
+          <p id="email-error" className="mt-1 text-xs text-red-600" role="alert">
+            {errors.email}
+          </p>
+        )}
       </div>
-    </div>
+
+      {/* Password field */}
+      <div>
+        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+          Parol
+        </label>
+        <div className="relative">
+          <input
+            id="password"
+            name="password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="current-password"
+            required
+            value={formData.password}
+            onChange={handleChange}
+            disabled={isLoading}
+            className={`
+              block w-full px-3 py-2 pr-10 border rounded-lg text-gray-900 
+              placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 
+              focus:border-blue-500 sm:text-sm transition-colors
+              ${errors.password ? 'border-red-500 bg-red-50' : 'border-gray-300'}
+              ${isLoading ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}
+            `}
+            placeholder="••••••••"
+            aria-describedby={errors.password ? 'password-error' : undefined}
+          />
+          <button
+            type="button"
+            className="absolute inset-y-0 right-0 pr-3 flex items-center"
+            onClick={() => setShowPassword(!showPassword)}
+            disabled={isLoading}
+            aria-label={showPassword ? 'Parolu gizlət' : 'Parolu göstər'}
+          >
+            {showPassword ? (
+              <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L8.464 8.464m1.414 1.414L12 12m2.122-2.122L8.464 5.05m0 0L6.343 2.929m2.121 2.121L12 8.172l2.829-2.829m0 0L18.07 2.929m-2.828 2.829L21 9.586" />
+              </svg>
+            ) : (
+              <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            )}
+          </button>
+        </div>
+        {errors.password && (
+          <p id="password-error" className="mt-1 text-xs text-red-600" role="alert">
+            {errors.password}
+          </p>
+        )}
+      </div>
+
+      {/* Remember me checkbox */}
+      <div className="flex items-center">
+        <input
+          id="remember-me"
+          name="remember_me"
+          type="checkbox"
+          checked={formData.remember_me}
+          onChange={handleChange}
+          disabled={isLoading}
+          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+        />
+        <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
+          Məni xatırla
+        </label>
+      </div>
+
+      {/* Global form error */}
+      {errors.form && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm" role="alert">
+          <div className="flex items-start">
+            <svg className="h-4 w-4 text-red-600 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>{errors.form}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Submit button */}
+      <div>
+        <button
+          type="submit"
+          disabled={isLoading}
+          className={`
+            group relative w-full flex justify-center py-3 px-4 border border-transparent 
+            text-sm font-medium rounded-lg text-white focus:outline-none focus:ring-2 
+            focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200
+            ${isLoading
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-blue-600 hover:bg-blue-700 transform hover:scale-[1.02] shadow-md hover:shadow-lg'
+            }
+          `}
+        >
+          {isLoading ? (
+            <>
+              <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Yoxlanılır...
+            </>
+          ) : (
+            <>
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              Daxil ol
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Additional help text */}
+      <div className="text-center text-xs text-gray-500 mt-4">
+        Problemləriniz varsa, sistem administratoruna müraciət edin
+      </div>
+    </form>
   );
-}
+};
+
+export default LoginForm;

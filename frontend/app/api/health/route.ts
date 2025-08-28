@@ -30,7 +30,6 @@ export async function GET(request: NextRequest) {
       const response = await fetch(`${backendUrl}/health`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
-        signal: AbortSignal.timeout(5000), // 5 second timeout
       });
       
       if (response.ok) {
